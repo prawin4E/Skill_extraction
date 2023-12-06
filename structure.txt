@@ -1,0 +1,5 @@
+main.py:
+
+The main entry point for your application, responsible for initializing the FastAPI app and configuring dependencies.
+
+
