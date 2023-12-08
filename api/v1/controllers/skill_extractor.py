@@ -7,6 +7,7 @@ from fastapi import FastAPI, APIRouter, File, UploadFile, Request
 from pydantic import BaseModel
 from schemas.skill_extraction_response import SkillExtractionResponse
 from schemas.skill_extraction_request import SkillExtractionRequest
+from models.parse_results import process_result
 import json
 
 router = APIRouter()
@@ -25,12 +26,9 @@ async def extract_skills(request_body: SkillExtractionRequest):
 
     # Extract skills from the job description
     annotations = skill_extractor.annotate(job_description_text)
-    pprint(annotations)
-    annotations = annotations["results"]
+    annotations = process_result(annotations)
 
-    annotations = json.dumps(annotations)
-
-    print(annotations)
+    print("result:",annotations)
 
     # Return the extracted skills
-    return SkillExtractionResponse(annotations=annotations)
+    return SkillExtractionResponse(annotations="done")
