@@ -28,7 +28,7 @@ async def extract_skills(request_body: SkillExtractionRequest):
     annotations = skill_extractor.annotate(job_description_text)
     annotations = process_result(annotations)
 
-    print("result:",annotations)
+    pprint(annotations)
 
     # Return the extracted skills
     return SkillExtractionResponse(annotations="done")
