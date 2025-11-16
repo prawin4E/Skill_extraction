@@ -1,14 +1,36 @@
-from setuptools import setup
+from setuptools import setup, find_packages
+from pathlib import Path
+
+# Read requirements from requirements.txt
+requirements_path = Path(__file__).parent / "requirements.txt"
+with open(requirements_path) as f:
+    requirements = [
+        line.strip()
+        for line in f
+        if line.strip() and not line.startswith('#')
+    ]
+
+# Read long description from README
+readme_path = Path(__file__).parent / "README.md"
+with open(readme_path, encoding="utf-8") as f:
+    long_description = f.read()
 
 setup(
-    name='Itech Skills Extractor',
-    version='0.1',
-    py_modules=['skill_extractor'],
-    install_requires=[
-        "skillNer",
-        "spacy>=3.0.0,<4.0.0",
-        "fastapi",
-        "uvicorn[standard]",
-        "ipython"
-    ]
+    name='skill-extractor-api',
+    version='0.1.0',
+    description='API for extracting skills from resume text using SkillNER',
+    long_description=long_description,
+    long_description_content_type='text/markdown',
+    author='prawin4E',
+    packages=find_packages(exclude=['tests*']),
+    python_requires='>=3.9',
+    install_requires=requirements,
+    classifiers=[
+        'Development Status :: 3 - Alpha',
+        'Intended Audience :: Developers',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
+    ],
 )

@@ -1,31 +1,62 @@
-from pprint import pprint
+import logging
 import spacy
 from spacy.matcher import PhraseMatcher
 from skillNer.general_params import SKILL_DB
 from skillNer.skill_extractor_class import SkillExtractor
-from fastapi import FastAPI, APIRouter, File, UploadFile, Request
-from pydantic import BaseModel
+from fastapi import APIRouter, HTTPException
 from schemas.skill_extraction_response import SkillExtractionResponse
 from schemas.skill_extraction_request import SkillExtractionRequest
 from models.parse_results import process_result
-import json
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-nlp = spacy.load("en_core_web_lg")
-skill_extractor = SkillExtractor(nlp, SKILL_DB, PhraseMatcher)
+# Initialize NLP model and skill extractor
+try:
+    nlp = spacy.load("en_core_web_lg")
+    skill_extractor = SkillExtractor(nlp, SKILL_DB, PhraseMatcher)
+    logger.info("Successfully loaded spaCy model and initialized SkillExtractor")
+except Exception as e:
+    logger.error(f"Failed to initialize NLP model: {str(e)}")
+    raise
 
-@router.post("/extract-skills", response_model=SkillExtractionResponse, summary="Extract skills from job description")
+@router.post("/extract-skills", response_model=SkillExtractionResponse, summary="Extract skills from resume text")
 async def extract_skills(request_body: SkillExtractionRequest):
-    job_description_text = request_body.resume_text
+    """
+    Extract skills from resume text using SkillNER.
 
-    print(job_description_text)
+    Args:
+        request_body: SkillExtractionRequest containing resume text
 
-    if job_description_text is None:
-        return SkillExtractionResponse(annotations=["No resume text provided"])
+    Returns:
+        SkillExtractionResponse with extracted skills
 
-    # Extract skills from the job description
-    annotations = skill_extractor.annotate(job_description_text)
-    annotations = process_result(annotations)
-    # Return the extracted skills
-    return SkillExtractionResponse(annotations=json.dumps(annotations))
+    Raises:
+        HTTPException: If skill extraction fails
+    """
+    try:
+        resume_text = request_body.resume_text
+
+        # Validate input
+        if not resume_text or not resume_text.strip():
+            raise HTTPException(status_code=400, detail="Resume text cannot be empty")
+
+        logger.info(f"Processing resume text of length: {len(resume_text)}")
+
+        # Extract skills from the resume text
+        annotations = skill_extractor.annotate(resume_text)
+        processed_annotations = process_result(annotations)
+
+        logger.info(f"Successfully extracted {len(processed_annotations)} skills")
+
+        # Return the extracted skills as a list of dicts
+        return SkillExtractionResponse(annotations=processed_annotations)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error during skill extraction: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Skill extraction failed: {str(e)}")
